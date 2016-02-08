@@ -1,0 +1,201 @@
+---
+title: "Working with Income data set"
+author: "Arindam"
+date: "February 6, 2016"
+output: pdf_document
+---
+
+Objective of this excercise is to study the Income data set from the source given below. Understand the variables used in the data set. Use transformation to create a tidy data set and subset the data for further analysis.  
+
+http://archive.ics.uci.edu/ml/machine-learning-databases/
+
+
+
+```{r sourcing data & creating file, eval=TRUE}
+
+Income_data<-read.table("http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data",header=FALSE,sep=",",stringsAsFactors = FALSE,na.strings="NA")
+
+# naming the variables of data set
+
+names(Income_data)<-c("age","workclass","fnlwgt","education","education_number","marital_status","occupation","relationship","race","sex","capital_gain","capital_loss","hours_per_week","native_country","class")
+
+# looking at summary of the data
+
+str(Income_data)
+
+summary(Income_data)
+
+### Analysis- there are 32561 records and 15 variables in the data set.
+##class variablle being the target variable related to income.
+
+
+
+# looking at target variable class
+
+unique(Income_data$class)
+
+### Transformation- for further analysis of the data this variable to be transformed to nominal value 0 and 1 for ease of use.  Income <= 50k -->0 ; Income >50k-->1
+
+Income_data$class[Income_data$class==" <=50K"] <- 0
+Income_data$class[Income_data$class==" >50K"] <- 1
+
+Income_data$class<-as.factor(Income_data$class)
+
+table(Income_data$class)
+str(Income_data$class)
+unique(Income_data$class)
+
+
+### Analysis- Classification variable has been transformed to a factor variable with value 0 & 1 for ease of analysis
+
+
+# looking at variable age and how it is related to target variable class
+
+hist(Income_data$age)
+barplot(table(Income_data$class,Income_data$age),legend.text = TRUE)
+
+
+### Analysis- data distribution looks likeleft skewed with right long tail for age.
+#It looks like people in data set have higher earnings between late 20s to early 60s. #There are few data points towards the end of the spectrum above 75 and below 17 
+# For making a better data set subset data by  Age>70 and age<20--> subset condition...(1) 
+
+
+# Looking at Education_number & education variables
+
+hist(Income_data$education_number,xlim = c(0,18))
+unique(Income_data$education_number)
+
+### Analysis- data seems to have peek value around 8-10 education number
+
+### Transformation of education variable to adjust the level
+
+str(Income_data$education)
+plot(table(Income_data$education),ylim=c(0,10000))
+table(Income_data$education)
+
+Income_data$education<-ordered(Income_data$education,levels=c(" Preschool"," 1st-4th"," 5th-6th"," 7th-8th"," 9th"," 10th"," 11th"," 12th"," HS-grad"," Some-college"," Assoc-acdm"," Assoc-voc"," Bachelors"," Masters"," Prof-school"," Doctorate"))
+
+
+Income_data$education<-as.factor(Income_data$education)
+
+
+barplot(table( Income_data$class,Income_data$education),ylim = c(0,10000))
+
+###  Education variables seeems to have same replationship as like education number. 
+
+
+plot(Income_data$education, Income_data$education_number)
+
+
+### Analysis- It indicates that education_number and education variable represent almost #the same value and one of those two are required in final data set ....
+#subset condition ...(2)
+
+#analysis of variable working class
+
+unique(Income_data$workclass)
+Income_data$workclass[Income_data$workclass==" ?"] <- "Not Known"
+
+mosaicplot(table( Income_data$workclass,Income_data$class))
+
+### Analysis-looking at the data and chart it appears that most of the observations are working in private concerns. 
+#There are some records where workclass having value ,?,Without pay, never worked' those data will not make sesnse to keep with the data set...
+#Subset condition ..(3)
+
+
+# Analysis of income data by marital status and race
+
+
+barplot(table(Income_data$class,Income_data$marital_status),legend.text = TRUE,ylim=c(0,14000))
+
+barplot(table(Income_data$class,Income_data$race),legend.text = TRUE,ylim=c(0,22000))
+
+### Analysis- from above scenario it appears that race is a factor in the given data set which is related to class.
+
+
+
+# Variable sex and income relationship
+
+barplot(table(Income_data$class,Income_data$sex),legend.text =TRUE,ylim=c(0,20000))
+
+tapply(Income_data$class,Income_data$sex,summary)
+
+### Analysis- above two plot it appears that male has high proportion of observations earning more than 50k. So gender is a factor in income.
+
+
+
+# How hours per week influence income
+
+str(Income_data$hours_per_week)
+
+plot(Income_data$class,Income_data$hours_per_week,ylim=c(0,100))
+
+barplot(table(Income_data$class,Income_data$hours_per_week),legend.text = TRUE,ylim = c(0,14000))
+
+
+### Analysis- It is very interesting to see that, median for both income class is close to 40, 
+#but for high income group IQR is higher than lower income group. But thete are lot of outliers in the data. 
+#This variable if requried to be used will need filtration of extrement cases. 
+
+
+
+# Country variable analysis
+
+barplot(table(Income_data$class,Income_data$native_country),ylim = c(0,25000))
+
+table(Income_data$native_country)
+
+length(Income_data$native_country[Income_data$native_country== " United-States"])/ length(Income_data$native_country)
+
+
+### Analysis- looking at the data set by country variables it appears that USA has around 89.5 % data. 
+#Considering that it would make sense to subset only USA data for further analysis to get correct representation..
+#subset condition.....(4)
+
+
+# Variable Capital-gain and Capital loss
+
+plot(Income_data$class,Income_data$capital_gain)
+barplot(table(Income_data$class,Income_data$capital_gain))
+length(Income_data$capital_gain[Income_data$capital_gain==0])/length(Income_data$capital_gain)
+
+### Analysis 91% data for varibale in 0 , this varibale can be removed in tiday . 
+# Subset condition...(5)
+
+
+
+hist(Income_data$capital_loss)
+length(Income_data$capital_loss[Income_data$capital_loss==0])/length(Income_data$capital_loss)
+
+### Analysis, 95% data for varibale in 0 , this varibale can be removed in tiday . Subset condition...(6)
+
+
+
+#***** creation a tidy subset data with above mentioned conditions
+
+#&& COndition 1 subset for Age>70 and age<20; condition 3, subset for workclass!= not Known, condition 5, subset for country =United States
+
+Income_data_sub<-subset(Income_data, Income_data$age>=20 & Income_data$age<70   & Income_data$workclass!=c("Not Known") & Income_data$native_country==c(" United-States"))
+
+nrow(Income_data)
+nrow(Income_data_sub)
+
+
+#&& subset data by removing columns which are not requried for further analysis, condition 2, Education, 5, capital-gain, capital-loss columns having 0 for most of the data
+
+Income_data_sub<-subset(Income_data_sub,select=-c(education,capital_gain,capital_loss))
+
+
+## creating factor variable of education levels
+Income_data_sub$education_number<-ordered(Income_data_sub$education_number,levels=c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16))
+
+
+str(Income_data_sub)
+
+## Summary of final data file 
+summary(Income_data_sub)
+
+
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
